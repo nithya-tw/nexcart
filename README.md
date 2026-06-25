@@ -9,6 +9,7 @@ NexCart is a production-inspired cloud-native e-commerce platform designed to de
 The platform is built as a collection of independently deployable microservices with clear service boundaries, event-driven communication, and logical data ownership.
 
 The project emphasizes clean architecture, maintainability, scalability, and testability while following industry best practices.
+
 ---
 
 ## Current Status
