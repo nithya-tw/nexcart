@@ -30,6 +30,8 @@
 
     <modules>
         <module>services/user-service</module>
+        <module>services/product-service</module>
+        <module>services/cart-service</module>
     </modules>
 
 </project>
