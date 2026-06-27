@@ -3,6 +3,7 @@ package com.nexcart.userservice.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -89,6 +91,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleGenericException(
         Exception ex,
         HttpServletRequest request) {
+
+        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(buildErrorResponse(
