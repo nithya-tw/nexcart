@@ -10,9 +10,11 @@ import com.nexcart.orderservice.order.dto.response.OrderResponse;
 import com.nexcart.orderservice.order.entity.Order;
 import com.nexcart.orderservice.order.entity.OrderItem;
 import com.nexcart.orderservice.order.entity.OrderStatus;
+import com.nexcart.orderservice.order.event.OrderPlacedEvent;
 import com.nexcart.orderservice.order.repository.OrderItemRepository;
 import com.nexcart.orderservice.order.repository.OrderRepository;
 import com.nexcart.orderservice.order.service.OrderService;
+import com.nexcart.orderservice.order.service.OutboxPublisherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,6 +34,7 @@ public class JpaOrderService implements OrderService {
     
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OutboxPublisherService outboxPublisherService;
     private final Random random = new Random();
     
     @Override
@@ -64,7 +68,31 @@ public class JpaOrderService implements OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
         
+        publishOrderPlacedEvent(savedOrder);
+        
         return mapToResponse(savedOrder);
+    }
+    
+    private void publishOrderPlacedEvent(Order order) {
+        List<OrderPlacedEvent.OrderItemDto> eventItems = order.getItems().stream()
+                .map(item -> new OrderPlacedEvent.OrderItemDto(
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getUnitPrice()
+                ))
+                .collect(Collectors.toList());
+        
+        OrderPlacedEvent event = new OrderPlacedEvent(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getUserId(),
+                eventItems,
+                order.getTotalAmount()
+        );
+        
+        outboxPublisherService.saveEventToOutbox(event, "Order", order.getId());
+        log.info("OrderPlacedEvent saved to outbox: orderId={}, eventId={}", 
+                order.getId(), event.getEventId());
     }
     
     @Override
