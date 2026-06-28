@@ -26,6 +26,7 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-cloud.version>2024.0.1</spring-cloud.version>
     </properties>
 
     <modules>
@@ -34,6 +35,21 @@
         <module>services/cart-service</module>
         <module>services/inventory-service</module>
         <module>services/order-service</module>
+        <module>services/discovery-service</module>
+        <module>services/api-gateway</module>
+        <module>services/auth-service</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>

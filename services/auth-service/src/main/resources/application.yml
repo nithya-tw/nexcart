@@ -1,0 +1,23 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: auth-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ThisIsAVerySecureSecretKeyForJwtTokenGenerationThatIsAtLeast256BitsLong
+  expiration: 3600000  # 1 hour
+
+logging:
+  level:
+    com.nexcart.authservice: DEBUG

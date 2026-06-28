@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexcart
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexcart-config
+  namespace: nexcart
+data:
+  EUREKA_URL: "http://discovery-service:8761/eureka/"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_DB: "nexcart"
+  KAFKA_BOOTSTRAP: "kafka:9092"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nexcart-secrets
+  namespace: nexcart
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "postgres"
+  JWT_SECRET: "ThisIsAVerySecureSecretKeyForJwtTokenGenerationThatIsAtLeast256BitsLong"
