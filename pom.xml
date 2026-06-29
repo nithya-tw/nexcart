@@ -38,6 +38,7 @@
         <module>services/discovery-service</module>
         <module>services/api-gateway</module>
         <module>services/auth-service</module>
+        <module>jacoco-aggregate</module>
     </modules>
 
     <dependencyManagement>

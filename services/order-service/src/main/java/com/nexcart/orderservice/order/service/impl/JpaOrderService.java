@@ -117,6 +117,14 @@ public class JpaOrderService implements OrderService {
     }
     
     @Override
+    public List<OrderResponse> getAllOrders() {
+        log.debug("Fetching all orders");
+        return orderRepository.findAll().stream()
+                .map(this::mapToResponseWithoutItems)
+                .toList();
+    }
+
+    @Override
     public List<OrderResponse> getOrdersByUserId(Long userId) {
         log.debug("Fetching orders for user: {}", userId);
         List<Order> orders = orderRepository.findByUserId(userId);

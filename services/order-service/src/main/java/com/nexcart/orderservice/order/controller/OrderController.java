@@ -36,6 +36,13 @@ public class OrderController {
         OrderResponse response = orderService.getOrderById(id);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+        log.info("Fetching all orders");
+        List<OrderResponse> responses = orderService.getAllOrders();
+        return ResponseEntity.ok(responses);
+    }
     
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<OrderResponse> getOrderByNumber(@PathVariable String orderNumber) {
@@ -74,7 +81,7 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
     
-    @DeleteMapping("/{id}")
+    @DeleteMapping({"/{id}", "/{id}/cancel"})
     public ResponseEntity<Void> cancelOrder(@PathVariable Long id) {
         log.info("Cancelling order: {}", id);
         orderService.cancelOrder(id);

@@ -1,0 +1,170 @@
+package com.nexcart.orderservice.inventory.client;
+
+import com.nexcart.orderservice.inventory.dto.InventoryAvailabilityResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import java.lang.reflect.Constructor;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("InventoryClient Tests")
+class InventoryClientTest {
+
+    @Mock
+    private RestClient restClient;
+
+    @Mock
+    private RestClient.RequestHeadersUriSpec<?> getSpec;
+
+    @Mock
+    private RestClient.RequestHeadersSpec<?> getHeadersSpec;
+
+    @Mock
+    private RestClient.RequestBodyUriSpec postSpec;
+
+    @Mock
+    private RestClient.RequestBodySpec postBodySpec;
+
+    @Mock
+    private RestClient.RequestHeadersSpec<?> postHeadersSpec;
+
+    @Mock
+    private RestClient.RequestHeadersUriSpec<?> deleteSpec;
+
+    @Mock
+    private RestClient.RequestHeadersSpec<?> deleteHeadersSpec;
+
+    @Mock
+    private RestClient.ResponseSpec responseSpec;
+
+    private InventoryClient inventoryClient;
+
+    @BeforeEach
+    void setUp() {
+        inventoryClient = new InventoryClient(restClient);
+        ReflectionTestUtils.setField(inventoryClient, "inventoryServiceUrl", "http://inventory-service");
+    }
+
+    @Test
+    @DisplayName("Should reserve stock successfully")
+    void shouldReserveStockSuccessfully() throws Exception {
+        when(restClient.post()).thenReturn(postSpec);
+        when(postSpec.uri("http://inventory-service/api/v1/inventory/reservations")).thenReturn(postBodySpec);
+        when(postBodySpec.body(any())).thenReturn(postHeadersSpec);
+        when(postHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(any(Class.class))).thenReturn(activeReservationResponse());
+
+        boolean reserved = inventoryClient.reserveStock(101L, 2, 5001L);
+
+        assertThat(reserved).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should propagate failure when reserve stock call fails")
+    void shouldPropagateFailureWhenReserveStockFails() {
+        when(restClient.post()).thenReturn(postSpec);
+        when(postSpec.uri("http://inventory-service/api/v1/inventory/reservations")).thenReturn(postBodySpec);
+        when(postBodySpec.body(any())).thenReturn(postHeadersSpec);
+        when(postHeadersSpec.retrieve()).thenThrow(new RestClientException("inventory unavailable"));
+
+        assertThatThrownBy(() -> inventoryClient.reserveStock(101L, 2, 5001L))
+                .isInstanceOf(RestClientException.class)
+                .hasMessageContaining("inventory unavailable");
+    }
+
+    @Test
+    @DisplayName("Should return false when reserve stock circuit is open")
+    void shouldReturnFalseWhenReserveStockCircuitIsOpen() {
+        boolean fallbackResult = ReflectionTestUtils.invokeMethod(
+                inventoryClient,
+                "reserveStockFallback",
+                101L,
+                2,
+                5001L,
+                new RuntimeException("Circuit breaker is open")
+        );
+
+        assertThat(fallbackResult).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should release stock successfully")
+    void shouldReleaseStockSuccessfully() {
+        when(restClient.delete()).thenReturn(deleteSpec);
+        when(deleteSpec.uri("http://inventory-service/api/v1/inventory/reservations/order/5001")).thenReturn(deleteHeadersSpec);
+        when(deleteHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.toBodilessEntity()).thenReturn(ResponseEntity.noContent().build());
+
+        assertThatCode(() -> inventoryClient.releaseStock(101L, 2, 5001L))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Should swallow release stock failures")
+    void shouldSwallowReleaseStockFailures() {
+        when(restClient.delete()).thenReturn(deleteSpec);
+        when(deleteSpec.uri("http://inventory-service/api/v1/inventory/reservations/order/5001")).thenReturn(deleteHeadersSpec);
+        when(deleteHeadersSpec.retrieve()).thenThrow(new RestClientException("release failed"));
+
+        assertThatCode(() -> inventoryClient.releaseStock(101L, 2, 5001L))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Should check inventory availability successfully")
+    void shouldCheckInventoryAvailabilitySuccessfully() {
+        InventoryAvailabilityResponse availability = new InventoryAvailabilityResponse(
+                1L,
+                101L,
+                10,
+                2,
+                8,
+                3,
+                false
+        );
+        when(restClient.get()).thenReturn(getSpec);
+        when(getSpec.uri("http://inventory-service/api/v1/inventory/product/101")).thenReturn(getHeadersSpec);
+        when(getHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(InventoryAvailabilityResponse.class)).thenReturn(availability);
+
+        boolean available = inventoryClient.checkInventoryAvailability(101L, 5);
+
+        assertThat(available).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should return false from inventory availability fallback")
+    void shouldReturnFalseFromInventoryAvailabilityFallback() {
+        boolean fallbackResult = ReflectionTestUtils.invokeMethod(
+                inventoryClient,
+                "checkInventoryFallback",
+                101L,
+                5,
+                new RuntimeException("Circuit breaker open")
+        );
+
+        assertThat(fallbackResult).isFalse();
+    }
+
+    private Object activeReservationResponse() throws Exception {
+        Class<?> responseType = Class.forName("com.nexcart.orderservice.inventory.client.InventoryClient$ReservationResponse");
+        Constructor<?> constructor = responseType.getDeclaredConstructor(Long.class, Long.class, Long.class, Integer.class, String.class);
+        constructor.setAccessible(true);
+        return constructor.newInstance(1L, 101L, 5001L, 2, "ACTIVE");
+    }
+}

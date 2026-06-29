@@ -16,6 +16,7 @@ public class OrderSagaOrchestrator {
 
     private final OrderRepository orderRepository;
     private final InventoryClient inventoryClient;
+    private final PaymentProcessor paymentProcessor;
 
     @Transactional
     public void executeOrderSaga(Order order) {
@@ -25,6 +26,7 @@ public class OrderSagaOrchestrator {
             // Step 1: Reserve inventory
             boolean inventoryReserved = reserveInventory(order);
             if (!inventoryReserved) {
+                compensateInventory(order);
                 compensateOrder(order, "Inventory reservation failed");
                 return;
             }
@@ -70,9 +72,7 @@ public class OrderSagaOrchestrator {
     }
 
     private boolean processPayment(Order order) {
-        // Placeholder: Integrate with payment gateway
-        log.info("Processing payment for order: {} amount: {}", order.getId(), order.getTotalAmount());
-        return true;
+        return paymentProcessor.processPayment(order);
     }
 
     private void compensateInventory(Order order) {
