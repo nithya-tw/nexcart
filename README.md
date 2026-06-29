@@ -10,7 +10,7 @@ NexCart is a production-inspired microservices application featuring:
 - **Saga Pattern** for distributed transactions
 - **Redis Caching** for performance
 - **Complete Observability** (Prometheus, Grafana, Loki)
-- **75%+ Test Coverage** with JaCoCo
+- **74% Average Test Coverage** with JaCoCo (253 tests)
 - **Kubernetes Ready** with complete manifests
 - **CI/CD Pipeline** with GitHub Actions
 
@@ -54,6 +54,8 @@ NexCart is a production-inspired microservices application featuring:
 - Centralized logging with Grafana Loki
 - Real-time metrics with Prometheus + Grafana
 - Health checks and graceful shutdown
+- Virtual Threads for high-concurrency operations
+- Integration tests with Testcontainers (real databases)
 
 ---
 
@@ -61,14 +63,16 @@ NexCart is a production-inspired microservices application featuring:
 
 ### Test Coverage (JaCoCo)
 
-| Service | Line Coverage | Branch Coverage | Tests |
-|---------|---------------|-----------------|-------|
-| User Service | 81% | 100% | 32 |
-| Product Service | 85% | 88% | 45 |
-| Cart Service | 85% | 100% | 21 |
-| Inventory Service | 60% | 70% | 58 |
-| Auth Service | 72% | 92% | 27 |
-| Order Service | TBD | TBD | 25 |
+| Service | Line Coverage | Branch Coverage | Tests (Unit + Integration) |
+|---------|---------------|-----------------|----------------------------|
+| User Service | 81% | 100% | 54 unit tests |
+| Product Service | 85% | 88% | 45 unit + 13 integration |
+| Cart Service | 85% | 100% | 21 unit tests |
+| Inventory Service | 60% | 70% | 58 unit tests |
+| Auth Service | 72% | 92% | 27 unit tests |
+| Order Service | 61% | 47% | 34 unit tests |
+
+**Total:** 253 tests (239 unit + 14 integration)
 
 **Check Coverage:**
 ```bash
@@ -87,7 +91,26 @@ open jacoco-aggregate/target/site/jacoco-aggregate/index.html
 - **Controller Tests** - REST API endpoints (@WebMvcTest)
 - **Exception Handler Tests** - Error response validation
 - **Entity Tests** - Business logic in domain models
-- **Integration Tests** - End-to-end flows (planned with Testcontainers)
+- **Integration Tests** - End-to-end flows with Testcontainers (PostgreSQL + Redis)
+  - Product Service: 13 integration tests covering search, filtering, CRUD
+  - Tests verified with real databases (see `INTEGRATION_TESTS_VERIFIED.md`)
+
+### Running Tests
+
+```bash
+# Run all tests (unit + integration)
+# Requires Docker for integration tests
+export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+export TESTCONTAINERS_RYUK_DISABLED=true
+mvn clean test
+
+# Run unit tests only (no Docker required)
+mvn test -Dtest='!ProductServiceIntegrationTest'
+
+# Run integration tests only (requires Docker)
+mvn test -Dtest=ProductServiceIntegrationTest -pl services/product-service
+```
 
 ---
 
@@ -144,11 +167,17 @@ open jacoco-aggregate/target/site/jacoco-aggregate/index.html
 - Loki + Promtail (centralized logging)
 - Spring Boot Actuator (health checks)
 
+**Testing**
+- JUnit 5 + Mockito (unit tests)
+- Testcontainers (integration tests with real databases)
+- JaCoCo (code coverage 74% average)
+- 253 total tests (239 unit + 14 integration)
+
 **DevOps**
 - Docker + Docker Compose
 - Kubernetes (complete YAML manifests)
 - GitHub Actions (CI/CD)
-- JaCoCo (code coverage 75%+)
+- Flyway database migrations
 
 ---
 
@@ -376,20 +405,29 @@ POST /api/orders
 ## Testing
 
 ```bash
-# Run all tests
+# Run all tests (requires Docker for integration tests)
+export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+export TESTCONTAINERS_RYUK_DISABLED=true
 ./mvnw clean test
+
+# Run unit tests only (no Docker required)
+./mvnw test -Dtest='!ProductServiceIntegrationTest'
 
 # Run tests with coverage
 ./mvnw clean test jacoco:report
 
-# View coverage report (opens in browser)
+# View coverage report
 open services/product-service/target/site/jacoco/index.html
 
-# Run single service tests
-./mvnw -pl services/product-service test
+# Run integration tests for Product Service (requires Docker)
+./mvnw -pl services/product-service test -Dtest=ProductServiceIntegrationTest
 ```
 
-**Coverage Target:** 50%+ for MVP (critical paths)
+**Coverage Achieved:** 74% average across all services  
+**Total Tests:** 253 tests (239 unit + 14 integration)
+
+See `INTEGRATION_TESTS_VERIFIED.md` for integration test verification report.
 
 ---
 
@@ -490,7 +528,4 @@ Built with:
 - Redis for caching
 - Prometheus & Grafana for observability
 - Docker & Kubernetes for containerization
-
-**Clean Code Principles** inspired by Robert C. Martin  
-**Microservices Patterns** inspired by Chris Richardson  
-**Domain-Driven Design** principles by Eric Evans
+- Testcontainers for integration testing
