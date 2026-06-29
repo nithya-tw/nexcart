@@ -15,6 +15,7 @@ import com.nexcart.orderservice.order.repository.OrderItemRepository;
 import com.nexcart.orderservice.order.repository.OrderRepository;
 import com.nexcart.orderservice.order.service.OrderService;
 import com.nexcart.orderservice.order.service.OutboxPublisherService;
+import com.nexcart.orderservice.saga.OrderSagaOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class JpaOrderService implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OutboxPublisherService outboxPublisherService;
+    private final OrderSagaOrchestrator sagaOrchestrator;
     private final Random random = new Random();
     
     @Override
@@ -67,6 +69,9 @@ public class JpaOrderService implements OrderService {
         
         Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: {}", savedOrder.getOrderNumber());
+        
+        // Execute Saga for distributed transaction
+        sagaOrchestrator.executeOrderSaga(savedOrder);
         
         publishOrderPlacedEvent(savedOrder);
         

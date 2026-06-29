@@ -73,6 +73,82 @@ public class InventoryClient {
     }
     
     /**
+     * Reserve inventory for an order (Saga Pattern - Step 1).
+     * 
+     * Saga Pattern Context:
+     * - This is a compensatable transaction
+     * - If subsequent steps fail, releaseStock() must be called
+     * - Idempotent: Multiple calls with same orderId should not double-reserve
+     * 
+     * @param productId Product ID to reserve
+     * @param quantity Quantity to reserve
+     * @param orderId Order ID for idempotency
+     * @return true if reservation successful
+     */
+    @CircuitBreaker(name = "inventoryService", fallbackMethod = "reserveStockFallback")
+    @Retry(name = "inventoryService")
+    public boolean reserveStock(Long productId, Integer quantity, Long orderId) {
+        log.info("Reserving inventory for product: {}, quantity: {}, orderId: {}", 
+                productId, quantity, orderId);
+        
+        try {
+            String url = String.format("%s/api/v1/inventory/reservations", inventoryServiceUrl);
+            
+            // Request body matching inventory-service DTO
+            var request = new ReserveStockRequest(productId, orderId, quantity, 15);
+            
+            var response = restClient.post()
+                    .uri(url)
+                    .body(request)
+                    .retrieve()
+                    .body(ReservationResponse.class);
+            
+            log.info("Stock reservation result for product {}: {}", productId, response);
+            return response != null && "ACTIVE".equals(response.status());
+            
+        } catch (RestClientException e) {
+            log.error("Failed to reserve stock for product: {}", productId, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Release previously reserved inventory (Saga Pattern - Compensation).
+     * 
+     * Compensation Logic:
+     * - Called when order processing fails after inventory reservation
+     * - Must be idempotent: safe to call multiple times
+     * - Should not fail (best effort, with logging)
+     * 
+     * @param productId Product ID (for logging only)
+     * @param quantity Quantity (for logging only)
+     * @param orderId Order ID for tracking
+     */
+    @CircuitBreaker(name = "inventoryService", fallbackMethod = "releaseStockFallback")
+    @Retry(name = "inventoryService")
+    public void releaseStock(Long productId, Integer quantity, Long orderId) {
+        log.info("Releasing inventory for product: {}, quantity: {}, orderId: {}", 
+                productId, quantity, orderId);
+        
+        try {
+            String url = String.format("%s/api/v1/inventory/reservations/order/%d", 
+                    inventoryServiceUrl, orderId);
+            
+            restClient.delete()
+                    .uri(url)
+                    .retrieve()
+                    .toBodilessEntity();
+            
+            log.info("Stock released successfully for product: {} (orderId: {})", productId, orderId);
+            
+        } catch (RestClientException e) {
+            // Log but don't throw - compensation should be best effort
+            log.error("Failed to release stock for product: {} (orderId: {}). " +
+                    "Manual intervention may be required.", productId, orderId, e);
+        }
+    }
+    
+    /**
      * Fallback method when inventory service is unavailable.
      * 
      * Graceful Degradation Strategy:
@@ -97,4 +173,20 @@ public class InventoryClient {
         
         return false;
     }
+    
+    private boolean reserveStockFallback(Long productId, Integer quantity, Long orderId, Throwable throwable) {
+        log.error("Failed to reserve stock for product: {} (orderId: {}). Circuit breaker activated. " +
+                "Reason: {}", productId, orderId, throwable.getMessage());
+        return false;
+    }
+    
+    private void releaseStockFallback(Long productId, Integer quantity, Long orderId, Throwable throwable) {
+        log.error("Failed to release stock for product: {} (orderId: {}). Manual intervention required. " +
+                "Reason: {}", productId, orderId, throwable.getMessage());
+        // In production: Send alert to ops team or add to dead letter queue
+    }
+    
+    // Inner classes for request/response DTOs
+    private record ReserveStockRequest(Long productId, Long orderId, Integer quantity, Integer ttlMinutes) {}
+    private record ReservationResponse(Long id, Long productId, Long orderId, Integer quantity, String status) {}
 }

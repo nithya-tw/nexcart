@@ -74,6 +74,17 @@ resilience4j:
         base-config: default
       inventoryServiceCircuitBreaker:
         base-config: default
+  
+  # Rate Limiter Configuration
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 100
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+    instances:
+      default:
+        base-config: default
 
 logging:
   level:

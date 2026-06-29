@@ -11,6 +11,8 @@ import com.nexcart.productservice.product.repository.ProductRepository;
 import com.nexcart.productservice.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse createProduct(CreateProductRequest request) {
         log.info("Creating product with SKU: {}", request.sku());
 
@@ -72,6 +75,7 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#id")
     public ProductResponse getProductById(Long id) {
         log.info("Fetching product with ID: {}", id);
         Product product = productRepository.findById(id)
@@ -81,6 +85,7 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "'sku:' + #sku")
     public ProductResponse getProductBySku(String sku) {
         log.info("Fetching product with SKU: {}", sku);
         Product product = productRepository.findBySku(sku)
@@ -90,6 +95,7 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "'slug:' + #slug")
     public ProductResponse getProductBySlug(String slug) {
         log.info("Fetching product with slug: {}", slug);
         Product product = productRepository.findBySlug(slug)
@@ -99,6 +105,7 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "'all'")
     public List<ProductResponse> getAllProducts() {
         log.info("Fetching all products");
         return productRepository.findAll().stream()
