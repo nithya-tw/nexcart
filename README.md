@@ -10,7 +10,7 @@ NexCart is a production-inspired microservices application featuring:
 - **Saga Pattern** for distributed transactions
 - **Redis Caching** for performance
 - **Complete Observability** (Prometheus, Grafana, Loki)
-- **74% Average Test Coverage** with JaCoCo (253 tests)
+- **84% Average Test Coverage** with JaCoCo
 - **Kubernetes Ready** with complete manifests
 - **CI/CD Pipeline** with GitHub Actions
 
@@ -63,16 +63,8 @@ NexCart is a production-inspired microservices application featuring:
 
 ### Test Coverage (JaCoCo)
 
-| Service | Line Coverage | Branch Coverage | Tests (Unit + Integration) |
-|---------|---------------|-----------------|----------------------------|
-| User Service | 81% | 100% | 54 unit tests |
-| Product Service | 85% | 88% | 45 unit + 13 integration |
-| Cart Service | 85% | 100% | 21 unit tests |
-| Inventory Service | 60% | 70% | 58 unit tests |
-| Auth Service | 72% | 92% | 27 unit tests |
-| Order Service | 61% | 47% | 34 unit tests |
-
-**Total:** 253 tests (239 unit + 14 integration)
+**Overall Average Test Coverage: 84.3%** (81.3% Line | 87.3% Branch)
+**Total:** 364 tests (345 unit + 19 integration)
 
 **Check Coverage:**
 ```bash
@@ -92,8 +84,8 @@ open jacoco-aggregate/target/site/jacoco-aggregate/index.html
 - **Exception Handler Tests** - Error response validation
 - **Entity Tests** - Business logic in domain models
 - **Integration Tests** - End-to-end flows with Testcontainers (PostgreSQL + Redis)
-  - Product Service: 13 integration tests covering search, filtering, CRUD
-  - Tests verified with real databases (see `INTEGRATION_TESTS_VERIFIED.md`)
+  - Product Service: 14 integration tests covering search, filtering, pagination, CRUD
+  - Tests verified with real databases
 
 ### Running Tests
 
@@ -427,8 +419,6 @@ open services/product-service/target/site/jacoco/index.html
 **Coverage Achieved:** 74% average across all services  
 **Total Tests:** 253 tests (239 unit + 14 integration)
 
-See `INTEGRATION_TESTS_VERIFIED.md` for integration test verification report.
-
 ---
 
 
@@ -501,6 +491,12 @@ JWT_EXPIRATION=3600000
 - Automatic cache eviction on product updates
 - LRU eviction policy for memory management
 
+**Virtual Threads (Java 21):**
+- User Service uses Java 21 Virtual Threads for HTTP request handling
+- Tomcat is configured with `Executors.newVirtualThreadPerTaskExecutor()`
+- Enables lightweight concurrency with one virtual thread per request
+- Improves scalability for I/O-bound workloads while reducing platform thread consumption
+
 **Rate Limiting:**
 - 100 requests per 60 seconds per user/IP
 - Prevents API abuse
@@ -512,20 +508,3 @@ JWT_EXPIRATION=3600000
 - Configurable thresholds and timeouts
 
 ---
-
-## License
-
-This project is built for educational purposes as part of a bootcamp assignment.
-
----
-
-## Acknowledgments
-
-Built with:
-- Spring Boot & Spring Cloud ecosystem
-- Apache Kafka for event streaming
-- PostgreSQL for data persistence
-- Redis for caching
-- Prometheus & Grafana for observability
-- Docker & Kubernetes for containerization
-- Testcontainers for integration testing
