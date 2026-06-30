@@ -1,6 +1,10 @@
 spring:
   application:
     name: product-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
 
   datasource:
     url: jdbc:postgresql://localhost:5432/product_db

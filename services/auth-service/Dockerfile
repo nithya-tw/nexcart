@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY target/*.jar app.jar
+COPY services/auth-service/target/*.jar app.jar
 
 EXPOSE 8086
 

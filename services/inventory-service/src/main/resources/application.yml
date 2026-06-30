@@ -1,6 +1,10 @@
 spring:
   application:
     name: inventory-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
 
   datasource:
     url: jdbc:postgresql://localhost:5432/inventory_db

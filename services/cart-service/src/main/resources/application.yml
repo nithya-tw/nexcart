@@ -1,6 +1,10 @@
 spring:
   application:
     name: cart-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
 
   datasource:
     url: jdbc:postgresql://localhost:5432/cart_db

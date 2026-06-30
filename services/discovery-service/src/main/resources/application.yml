@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: discovery-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
 
 eureka:
   instance:
