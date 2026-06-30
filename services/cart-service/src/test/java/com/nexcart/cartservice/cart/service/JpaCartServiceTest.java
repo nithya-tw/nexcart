@@ -27,16 +27,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * 📚 CONCEPT: Cart Service Testing
- * 🎯 ANALOGY: Shopping cart is like your physical cart at a grocery store.
- *             You can add items, update quantities, remove items, or clear everything.
- * 
- * ✅ WHY: 
- *    - Tests cart lifecycle: create, add, update, remove, clear
- *    - Validates quantity management
- *    - Ensures accurate total calculations
- * 
- * 🏢 REAL-WORLD: Amazon's cart service handles millions of concurrent users
+ * Unit tests for JpaCartService.
+ * Tests cart lifecycle, item management, and total calculations.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("JpaCartService Unit Tests")

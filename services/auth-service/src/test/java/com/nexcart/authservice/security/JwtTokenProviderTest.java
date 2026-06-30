@@ -13,11 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 📚 CONCEPT: JWT Token Provider Tests
- * 🎯 ANALOGY: Like testing a ticket booth - does it create valid tickets and reject fakes?
- * 
- * Why test JWT? Security is critical - one bug = potential data breach
- * Real-world: Auth0 has extensive JWT testing - tokens must be cryptographically secure
+ * Unit tests for JwtTokenProvider.
+ * Tests JWT token generation, validation, and expiration handling.
  */
 @DisplayName("JwtTokenProvider Tests")
 class JwtTokenProviderTest {

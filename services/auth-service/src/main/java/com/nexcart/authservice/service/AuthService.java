@@ -23,8 +23,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public LoginResponse authenticate(LoginRequest request) {
-        // TODO: Call user-service to validate credentials
-        // For now: demo authentication
+        // Note: Production version should integrate with user-service for credential validation
+        // Current implementation uses demo users for testing purposes
         if (authenticateUser(request.getUsername(), request.getPassword())) {
             List<String> roles = getUserRoles(request.getUsername());
             String token = jwtTokenProvider.generateToken(request.getUsername(), roles);

@@ -6,11 +6,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 📚 CONCEPT: Entity Tests
- * 🎯 ANALOGY: Testing the building blocks before building the house
- * 
- * Why test entities? They contain business logic (isLowStock, hasAvailableStock)
- * Real-world: Amazon's inventory logic must be bulletproof - one bug = lost sales
+ * Unit tests for Inventory entity.
+ * Tests business logic for stock management including low stock detection and availability.
  */
 @DisplayName("Inventory Entity Tests")
 class InventoryEntityTest {

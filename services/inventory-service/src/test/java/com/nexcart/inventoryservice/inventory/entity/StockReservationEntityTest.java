@@ -8,11 +8,8 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 📚 CONCEPT: StockReservation Entity Tests
- * 🎯 ANALOGY: Like testing a parking ticket - does it know when it's expired?
- * 
- * Why test isExpired()? Critical for auto-releasing abandoned carts
- * Real-world: Shopify releases cart reservations after 15 minutes
+ * Unit tests for StockReservation entity.
+ * Tests reservation expiration logic for automatic cart release.
  */
 @DisplayName("StockReservation Entity Tests")
 class StockReservationEntityTest {

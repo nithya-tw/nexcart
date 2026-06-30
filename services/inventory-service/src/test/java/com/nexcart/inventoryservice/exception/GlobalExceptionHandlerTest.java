@@ -17,11 +17,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * 📚 CONCEPT: Exception Handler Tests
- * 🎯 ANALOGY: Testing your customer service responses - how do you handle complaints?
- * 
- * Why test exception handlers? They define your API error responses
- * Real-world: Stripe has exceptional error messages - each HTTP status means something specific
+ * Unit tests for GlobalExceptionHandler.
+ * Tests API error responses for different exception types.
  */
 @DisplayName("GlobalExceptionHandler Tests")
 class GlobalExceptionHandlerTest {

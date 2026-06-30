@@ -27,20 +27,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * 📚 CONCEPT: Service Layer Unit Testing
- * 🎯 ANALOGY: Testing the service layer is like testing a chef's cooking skills.
- *             You verify ingredients (input), cooking process (business logic),
- *             and final dish (output) without needing the actual kitchen (database).
- * 
- * ✅ WHY: 
- *    - Isolates business logic from database
- *    - Fast test execution (no I/O)
- *    - Easy to test edge cases and error scenarios
- * 
- * 📊 PATTERN:
- *    Mock → Test → Verify
- *     ↓       ↓       ↓
- *    Repo   Service  Result
+ * Unit tests for JpaUserService.
+ * Tests user management operations including create, update, delete, and search.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("JpaUserService Unit Tests")
