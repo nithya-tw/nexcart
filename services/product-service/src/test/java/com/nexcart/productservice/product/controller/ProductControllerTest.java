@@ -520,4 +520,135 @@ class ProductControllerTest {
         // Verify that deleteProduct was called with correct ID
         verify(productService, times(1)).deleteProduct(productId);
     }
+
+    @Test
+    @DisplayName("Should return paginated products when page and size parameters are provided")
+    void testGetAllProducts_WithPagination() throws Exception {
+        // Arrange
+        ProductResponse product1 = ProductResponse.builder()
+                .id(1L)
+                .sku("PROD-001")
+                .name("Product 1")
+                .slug("product-1")
+                .description("Description 1")
+                .shortDescription("Short desc 1")
+                .price(new BigDecimal("99.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        
+        ProductResponse product2 = ProductResponse.builder()
+                .id(2L)
+                .sku("PROD-002")
+                .name("Product 2")
+                .slug("product-2")
+                .description("Description 2")
+                .shortDescription("Short desc 2")
+                .price(new BigDecimal("149.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        
+        org.springframework.data.domain.Pageable pageable = 
+            org.springframework.data.domain.PageRequest.of(0, 10, 
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "id"));
+        
+        org.springframework.data.domain.Page<ProductResponse> page = 
+            new org.springframework.data.domain.PageImpl<>(
+                Arrays.asList(product1, product2), pageable, 2);
+        
+        when(productService.getAllProducts(any(org.springframework.data.domain.Pageable.class)))
+            .thenReturn(page);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/products")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "id")
+                        .param("sortDirection", "ASC")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements", is(2)))
+                .andExpect(jsonPath("$.number", is(0)))
+                .andExpect(jsonPath("$.size", is(10)));
+
+        verify(productService, times(1)).getAllProducts(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should return paginated search results when page and size parameters are provided")
+    void testSearchProducts_WithPagination() throws Exception {
+        // Arrange
+        String query = "laptop";
+        ProductResponse product1 = ProductResponse.builder()
+                .id(1L)
+                .sku("LAP-001")
+                .name("Gaming Laptop")
+                .slug("gaming-laptop")
+                .description("High-end gaming laptop")
+                .shortDescription("Gaming laptop")
+                .price(new BigDecimal("1499.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        
+        ProductResponse product2 = ProductResponse.builder()
+                .id(2L)
+                .sku("LAP-002")
+                .name("Business Laptop")
+                .slug("business-laptop")
+                .description("Professional business laptop")
+                .shortDescription("Business laptop")
+                .price(new BigDecimal("999.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        
+        org.springframework.data.domain.Pageable pageable = 
+            org.springframework.data.domain.PageRequest.of(0, 20);
+        
+        org.springframework.data.domain.Page<ProductResponse> page = 
+            new org.springframework.data.domain.PageImpl<>(
+                Arrays.asList(product1, product2), pageable, 2);
+        
+        when(productService.searchProducts(eq(query), any(org.springframework.data.domain.Pageable.class)))
+            .thenReturn(page);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/products/search")
+                        .param("q", query)
+                        .param("page", "0")
+                        .param("size", "20")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements", is(2)))
+                .andExpect(jsonPath("$.content[0].name", is("Gaming Laptop")))
+                .andExpect(jsonPath("$.content[1].name", is("Business Laptop")));
+
+        verify(productService, times(1)).searchProducts(eq(query), any(org.springframework.data.domain.Pageable.class));
+    }
 }

@@ -1,6 +1,8 @@
 package com.nexcart.productservice.product.repository;
 
 import com.nexcart.productservice.product.entity.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,12 +24,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByIsActiveTrue();
 
+    Page<Product> findByIsActiveTrue(Pageable pageable);
+
     List<Product> findByIsFeaturedTrueAndIsActiveTrue();
 
     @Query("SELECT p FROM Product p WHERE p.isActive = true " +
            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Product> searchProducts(@Param("search") String search);
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true " +
+           "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Product> searchProducts(@Param("search") String search, Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.categoryId = :categoryId " +
            "AND p.price BETWEEN :minPrice AND :maxPrice " +

@@ -1,9 +1,11 @@
 package com.nexcart.orderservice;
 
 import com.nexcart.orderservice.inventory.client.InventoryClient;
+import com.nexcart.orderservice.order.repository.FailedEventRepository;
 import com.nexcart.orderservice.order.repository.OrderItemRepository;
 import com.nexcart.orderservice.order.repository.OrderRepository;
 import com.nexcart.orderservice.order.repository.OutboxEventRepository;
+import com.nexcart.orderservice.order.repository.ProcessedEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -31,6 +33,12 @@ class OrderServiceApplicationTests {
 
     @MockBean
     private OutboxEventRepository outboxEventRepository;
+
+    @MockBean
+    private FailedEventRepository failedEventRepository;
+
+    @MockBean
+    private ProcessedEventRepository processedEventRepository;
 
     @MockBean
     private KafkaTemplate<String, Object> kafkaTemplate;

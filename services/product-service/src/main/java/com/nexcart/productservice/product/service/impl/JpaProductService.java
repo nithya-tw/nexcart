@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,6 +117,16 @@ public class JpaProductService implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "'all:page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
+    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+        log.info("Fetching all products with pagination: page={}, size={}", 
+                 pageable.getPageNumber(), pageable.getPageSize());
+        return productRepository.findByIsActiveTrue(pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ProductResponse> getActiveProducts() {
         log.info("Fetching active products");
         return productRepository.findByIsActiveTrue().stream()
@@ -156,6 +168,16 @@ public class JpaProductService implements ProductService {
         return productRepository.searchProducts(query).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "'search:' + #query + ':page:' + #pageable.pageNumber")
+    public Page<ProductResponse> searchProducts(String query, Pageable pageable) {
+        log.info("Searching products with query: {} and pagination: page={}, size={}", 
+                 query, pageable.getPageNumber(), pageable.getPageSize());
+        return productRepository.searchProducts(query, pageable)
+                .map(this::mapToResponse);
     }
 
     @Override

@@ -976,4 +976,167 @@ class JpaProductServiceTest {
                 .isNotNull()
                 .isEqualByComparingTo(precisePrice);
     }
+
+    @Test
+    @DisplayName("Should return paginated products successfully")
+    void testGetAllProductsPaginated_Success() {
+        // ARRANGE
+        org.springframework.data.domain.Pageable pageable = 
+            org.springframework.data.domain.PageRequest.of(0, 10, 
+                org.springframework.data.domain.Sort.by("id").ascending());
+        
+        Product product1 = Product.builder()
+                .id(1L)
+                .sku("PROD-001")
+                .name("Product 1")
+                .slug("product-1")
+                .description("Description 1")
+                .shortDescription("Short desc 1")
+                .price(new BigDecimal("99.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .build();
+        product1.setCreatedAt(LocalDateTime.now());
+        product1.setUpdatedAt(LocalDateTime.now());
+        
+        Product product2 = Product.builder()
+                .id(2L)
+                .sku("PROD-002")
+                .name("Product 2")
+                .slug("product-2")
+                .description("Description 2")
+                .shortDescription("Short desc 2")
+                .price(new BigDecimal("149.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .build();
+        product2.setCreatedAt(LocalDateTime.now());
+        product2.setUpdatedAt(LocalDateTime.now());
+        
+        List<Product> products = Arrays.asList(product1, product2);
+        
+        org.springframework.data.domain.Page<Product> productPage = 
+            new org.springframework.data.domain.PageImpl<>(products, pageable, 2);
+        
+        when(productRepository.findByIsActiveTrue(pageable)).thenReturn(productPage);
+
+        // ACT
+        org.springframework.data.domain.Page<ProductResponse> result = 
+            productService.getAllProducts(pageable);
+
+        // ASSERT
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(10);
+        verify(productRepository).findByIsActiveTrue(pageable);
+    }
+
+    @Test
+    @DisplayName("Should return paginated search results successfully")
+    void testSearchProductsPaginated_Success() {
+        // ARRANGE
+        String query = "laptop";
+        org.springframework.data.domain.Pageable pageable = 
+            org.springframework.data.domain.PageRequest.of(0, 20);
+        
+        Product product1 = Product.builder()
+                .id(1L)
+                .sku("LAP-001")
+                .name("Gaming Laptop")
+                .slug("gaming-laptop")
+                .description("High-end gaming laptop")
+                .shortDescription("Gaming laptop")
+                .price(new BigDecimal("1499.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(true)
+                .build();
+        product1.setCreatedAt(LocalDateTime.now());
+        product1.setUpdatedAt(LocalDateTime.now());
+        
+        Product product2 = Product.builder()
+                .id(2L)
+                .sku("LAP-002")
+                .name("Business Laptop")
+                .slug("business-laptop")
+                .description("Professional business laptop")
+                .shortDescription("Business laptop")
+                .price(new BigDecimal("999.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .build();
+        product2.setCreatedAt(LocalDateTime.now());
+        product2.setUpdatedAt(LocalDateTime.now());
+        
+        Product product3 = Product.builder()
+                .id(3L)
+                .sku("LAP-003")
+                .name("Student Laptop")
+                .slug("student-laptop")
+                .description("Budget-friendly student laptop")
+                .shortDescription("Student laptop")
+                .price(new BigDecimal("599.99"))
+                .brandId(1L)
+                .categoryId(1L)
+                .attributes(new HashMap<>())
+                .isActive(true)
+                .isFeatured(false)
+                .build();
+        product3.setCreatedAt(LocalDateTime.now());
+        product3.setUpdatedAt(LocalDateTime.now());
+        
+        List<Product> products = Arrays.asList(product1, product2, product3);
+        
+        org.springframework.data.domain.Page<Product> productPage = 
+            new org.springframework.data.domain.PageImpl<>(products, pageable, 3);
+        
+        when(productRepository.searchProducts(query, pageable)).thenReturn(productPage);
+
+        // ACT
+        org.springframework.data.domain.Page<ProductResponse> result = 
+            productService.searchProducts(query, pageable);
+
+        // ASSERT
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getTotalElements()).isEqualTo(3);
+        verify(productRepository).searchProducts(query, pageable);
+    }
+
+    @Test
+    @DisplayName("Should return empty page when no products match search")
+    void testSearchProductsPaginated_EmptyResult() {
+        // ARRANGE
+        String query = "nonexistent";
+        org.springframework.data.domain.Pageable pageable = 
+            org.springframework.data.domain.PageRequest.of(0, 10);
+        
+        org.springframework.data.domain.Page<Product> emptyPage = 
+            new org.springframework.data.domain.PageImpl<>(Collections.emptyList(), pageable, 0);
+        
+        when(productRepository.searchProducts(query, pageable)).thenReturn(emptyPage);
+
+        // ACT
+        org.springframework.data.domain.Page<ProductResponse> result = 
+            productService.searchProducts(query, pageable);
+
+        // ASSERT
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        verify(productRepository).searchProducts(query, pageable);
+    }
 }

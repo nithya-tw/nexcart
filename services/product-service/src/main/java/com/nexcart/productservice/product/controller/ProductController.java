@@ -6,6 +6,10 @@ import com.nexcart.productservice.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,12 +54,26 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts(@RequestParam(required = false) Boolean active) {
-        log.info("REST request to get all products, active filter: {}", active);
-        List<ProductResponse> responses = (active != null && active)
-                ? productService.getActiveProducts()
-                : productService.getAllProducts();
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false, defaultValue = "id") String sortBy,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDirection) {
+        
+        log.info("REST request to get all products, active filter: {}, page: {}, size: {}", active, page, size);
+        
+        if (page != null && size != null) {
+            Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+            Page<ProductResponse> responses = productService.getAllProducts(pageable);
+            return ResponseEntity.ok(responses);
+        } else {
+            List<ProductResponse> responses = (active != null && active)
+                    ? productService.getActiveProducts()
+                    : productService.getAllProducts();
+            return ResponseEntity.ok(responses);
+        }
     }
 
     @GetMapping("/featured")
@@ -80,10 +98,21 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String q) {
-        log.info("REST request to search products with query: {}", q);
-        List<ProductResponse> responses = productService.searchProducts(q);
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<?> searchProducts(
+            @RequestParam String q,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        
+        log.info("REST request to search products with query: {}, page: {}, size: {}", q, page, size);
+        
+        if (page != null && size != null) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductResponse> responses = productService.searchProducts(q, pageable);
+            return ResponseEntity.ok(responses);
+        } else {
+            List<ProductResponse> responses = productService.searchProducts(q);
+            return ResponseEntity.ok(responses);
+        }
     }
 
     @GetMapping("/category/{categoryId}/price-range")

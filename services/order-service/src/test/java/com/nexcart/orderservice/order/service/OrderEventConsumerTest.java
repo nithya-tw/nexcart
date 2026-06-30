@@ -124,6 +124,8 @@ class OrderEventConsumerTest {
     void shouldSkipProcessingIfEventAlreadyProcessed() throws Exception {
         String eventJson = "{\"eventId\":\"evt-123\",\"eventType\":\"InventoryReserved\",\"orderId\":1}";
         InventoryReservedEvent event = new InventoryReservedEvent(1L, 1L, List.of());
+        event.setEventId("evt-123");
+        event.setEventType("InventoryReserved");
         
         when(objectMapper.readValue(eq(eventJson), eq(Object.class))).thenReturn(new Object());
         when(objectMapper.readValue(eq(eventJson), eq(InventoryReservedEvent.class))).thenReturn(event);
@@ -144,6 +146,8 @@ class OrderEventConsumerTest {
         
         String eventJson = "{\"eventId\":\"evt-789\",\"eventType\":\"InventoryReserved\",\"orderId\":1}";
         InventoryReservedEvent event = new InventoryReservedEvent(1L, 1L, List.of());
+        event.setEventId("evt-789");
+        event.setEventType("InventoryReserved");
         
         when(objectMapper.readValue(eq(eventJson), eq(Object.class))).thenReturn(new Object());
         when(objectMapper.readValue(eq(eventJson), eq(InventoryReservedEvent.class))).thenReturn(event);
