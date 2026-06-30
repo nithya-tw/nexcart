@@ -142,6 +142,15 @@
                 </configuration>
             </plugin>
             
+            <!-- Maven Surefire Plugin - Exclude Integration Tests by Default -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>integration</excludedGroups>
+                </configuration>
+            </plugin>
+            
             <!-- JaCoCo Plugin for Code Coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
