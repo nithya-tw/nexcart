@@ -20,4 +20,9 @@ public interface StockReservationRepository extends JpaRepository<StockReservati
     List<StockReservation> findExpiredReservations(LocalDateTime now);
 
     List<StockReservation> findByInventoryId(Long inventoryId);
+    
+    List<StockReservation> findByStatusAndExpiresAtBefore(
+        StockReservation.ReservationStatus status, 
+        LocalDateTime expiryTime
+    );
 }
