@@ -59,16 +59,13 @@
                 <executions>
                     <execution>
                         <id>report-aggregate</id>
-                        <phase>verify</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>report-aggregate</goal>
                         </goals>
                         <configuration>
-                            <title>NexCart Coverage Report</title>
-                            <footer>NexCart E-Commerce Platform - Aggregate Coverage</footer>
-                            <dataFileIncludes>
-                                <dataFileInclude>**/jacoco.exec</dataFileInclude>
-                            </dataFileIncludes>
+                            <title>NexCart Aggregate Coverage Report</title>
+                            <footer>NexCart E-Commerce Platform</footer>
                         </configuration>
                     </execution>
                 </executions>
