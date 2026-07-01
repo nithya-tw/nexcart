@@ -381,9 +381,12 @@ POST /api/orders
 }
 ```
 
-**Demo Users:**
+**Demo Users (local development only):**
 - `admin` / `admin` (ROLE_ADMIN, ROLE_USER)
 - `user` / `user` (ROLE_USER)
+
+> ⚠️ **Security Note:** Change default credentials in production environments
+
 * **API Gateway**: http://localhost:8765/api/**
 * **Auth Service**: http://localhost:8086/api/v1/auth/login
 
@@ -395,7 +398,7 @@ POST /api/orders
 **Swagger UI** (each service): http://localhost:808X/swagger-ui/index.html
 
 **Infrastructure:**
-* **PostgreSQL**: localhost:5432 (user: postgres, password: postgres, 5 databases)
+* **PostgreSQL**: localhost:5432 (6 databases - credentials in docker-compose.yml)
 * **Kafka**: localhost:9092 (3 brokers)
 * **Redis**: localhost:6379
 
@@ -441,13 +444,12 @@ Flyway migrations run automatically on startup. Manual migration:
 
 ### Environment Variables
 
-Key configuration (set in `docker-compose.yml` or application.yml):
+Key configuration (set in `docker-compose.yml` or `application.yml`):
 
 ```yaml
-# Database
+# Database (credentials in docker-compose.yml)
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/userdb
 SPRING_DATASOURCE_USERNAME=nexcart
-SPRING_DATASOURCE_PASSWORD=nexcart
 
 # Kafka
 SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
@@ -456,7 +458,7 @@ SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 SPRING_REDIS_HOST=localhost
 SPRING_REDIS_PORT=6379
 
-# JWT
+# JWT (use strong secret in production)
 JWT_SECRET=your-256-bit-secret-key-here
 JWT_EXPIRATION=3600000
 ```
