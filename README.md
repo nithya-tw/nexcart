@@ -10,7 +10,7 @@ NexCart is a production-inspired microservices application featuring:
 - **Saga Pattern** for distributed transactions
 - **Redis Caching** for performance
 - **Complete Observability** (Prometheus, Grafana, Loki)
-- **84% Average Test Coverage** with JaCoCo
+- **84.3% Average Test Coverage** with JaCoCo (364 comprehensive tests)
 - **Kubernetes Ready** with complete manifests
 - **CI/CD Pipeline** with GitHub Actions
 
@@ -32,30 +32,100 @@ NexCart is a production-inspired microservices application featuring:
 - **API Gateway** (8765) - Routing, JWT auth, rate limiting
 - **Auth Service** (8086) - JWT token generation
 
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT / FRONTEND                           │
+└─────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+                    ┌────────────────────────────────┐
+                    │      API GATEWAY (8765)        │
+                    │  - JWT Authentication          │
+                    │  - Rate Limiting (100/min)     │
+                    │  - Circuit Breaker             │
+                    │  - Dynamic Routing             │
+                    └────────────────────────────────┘
+                                     │
+                   ┌─────────────────┼─────────────────┐
+                   │                 │                 │
+        ┌──────────▼──────────┐     │     ┌──────────▼──────────┐
+        │   AUTH SERVICE      │     │     │  DISCOVERY SERVICE  │
+        │      (8086)         │◄────┘────►│      (8761)         │
+        │  - JWT Generation   │           │  - Eureka Server    │
+        │  - Token Validation │           │  - Service Registry │
+        └─────────────────────┘           └─────────────────────┘
+                                                     │
+                   ┌─────────────────────────────────┼─────────────────┐
+                   │                                 │                 │
+        ┌──────────▼──────────┐         ┌───────────▼────────┐       │
+        │   USER SERVICE      │         │  PRODUCT SERVICE    │       │
+        │      (8080)         │         │      (8081)         │       │
+        │  - User Management  │         │  - Product Catalog  │       │
+        │  - CRUD Operations  │         │  - Search/Filter    │       │
+        └──────────┬──────────┘         │  - Pagination       │       │
+                   │                    └──────────┬──────────┘       │
+                   │                               │                  │
+                   │                    ┌──────────▼──────────┐       │
+                   │                    │    REDIS CACHE      │       │
+                   │                    │  - Product Catalog  │       │
+                   │                    │  - 1-hour TTL       │       │
+                   │                    └─────────────────────┘       │
+                   │                                                  │
+        ┌──────────▼──────────┐         ┌──────────────────┐         │
+        │   CART SERVICE      │         │ INVENTORY SERVICE│◄────────┘
+        │      (8082)         │         │      (8084)      │
+        │  - Shopping Cart    │         │  - Stock Mgmt    │
+        │  - Cart Operations  │         │  - Reservations  │
+        └──────────┬──────────┘         └────────┬─────────┘
+                   │                              │
+                   │         ┌────────────────────┼────────────────┐
+                   │         │                    │                │
+                   │    ┌────▼──────┐      ┌──────▼──────┐        │
+                   └───►│   ORDER   │◄────►│    KAFKA    │◄───────┘
+                        │  SERVICE  │      │   BROKER    │
+                        │  (8083)   │      │             │
+                        │  - Orders │      │ Topics:     │
+                        │  - Saga   │      │ • order-events        │
+                        │  Pattern  │      │ • inventory-events    │
+                        │  - DLQ    │      │ • order-events.DLT    │
+                        └─────┬─────┘      │ • inventory-events.DLT│
+                              │            └─────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────┐
+              │  OBSERVABILITY STACK      │
+              ├───────────────────────────┤
+              │  • Prometheus (Metrics)   │
+              │  • Grafana (Dashboards)   │
+              │  • Loki (Logs)            │
+              │  • Distributed Tracing    │
+              └───────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         DATA LAYER (PostgreSQL)                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  userdb  │  productdb  │  cartdb  │  inventorydb  │  orderdb  │  authdb │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Legend:
+  ─────►  Synchronous HTTP/REST calls
+  ◄────►  Service Discovery registration
+  ═════►  Asynchronous Kafka event streaming
+```
+
 ### Key Patterns
 
 - **Database-per-Service** - Each service has its own PostgreSQL database  
 - **Event-Driven** - Kafka for async communication between services  
 - **Saga Pattern** - Orchestration-based distributed transactions with compensation  
 - **Service Discovery** - Eureka for dynamic service registration  
-- **API Gateway** - Centralized routing and cross-cutting concerns  
+- **API Gateway** - Centralized routing, JWT auth, rate limiting (100 req/min)
 - **Circuit Breaker** - Resilience4j for fault tolerance  
 - **Caching** - Redis for high-performance product queries  
-- **Rate Limiting** - 100 requests per 60 seconds per user/IP  
-
-### Features
-
-- Complete CRUD operations for users, products, carts, orders
-- Product search with brand/category filters and pagination
-- Stock reservation with automatic release on order failure
-- Idempotent event consumers with deduplication
-- JWT authentication with role-based access control
-- Distributed tracing across all services
-- Centralized logging with Grafana Loki
-- Real-time metrics with Prometheus + Grafana
-- Health checks and graceful shutdown
-- Virtual Threads for high-concurrency operations
-- Integration tests with Testcontainers (real databases)
+- **Observability** - Prometheus, Grafana, Loki for metrics, dashboards, and logs
+- **High Test Coverage** - 84.3% average with 364 tests (345 unit + 19 integration)
 
 ---
 
@@ -64,6 +134,16 @@ NexCart is a production-inspired microservices application featuring:
 ### Test Coverage (JaCoCo)
 
 **Overall Average Test Coverage: 84.3%** (81.3% Line | 87.3% Branch)
+
+| Service | Line Coverage | Branch Coverage |
+|---------|---------------|-----------------|
+| Product Service | 91% | 80% |
+| Cart Service | 85% | 100% |
+| Inventory Service | 84% | 90% |
+| User Service | 82% | 100% |
+| Order Service | 74% | 62% |
+| Auth Service | 72% | 92% |
+
 **Total:** 364 tests (345 unit + 19 integration)
 
 **Check Coverage:**
@@ -106,70 +186,36 @@ mvn test -Dtest=ProductServiceIntegrationTest -pl services/product-service
 
 ---
 
-## Service Details
-
-### Microservices
-
-| Service | Port | Database | Key Features |
-|---------|------|----------|--------------|
-| User Service | 8080 | PostgreSQL | User CRUD, duplicate email detection |
-| Product Service | 8081 | PostgreSQL | Catalog + search, **Redis caching**, slug generation |
-| Cart Service | 8082 | PostgreSQL | Cart operations, price calculations |
-| Inventory Service | 8084 | PostgreSQL | Stock tracking, **Kafka event consumer** |
-| Order Service | 8083 | PostgreSQL | **Saga orchestration**, circuit breaker |
-| Discovery (Eureka) | 8761 | - | Service registry |
-| API Gateway | 8765 | - | Routing, JWT auth, rate limiting |
-| Auth Service | 8086 | - | JWT token generation |
-
-### Infrastructure
-
-| Component | Port | Purpose |
-|-----------|------|---------|
-| PostgreSQL | 5432 | Primary database (5 DBs) |
-| Kafka | 9092 | Event streaming (3 brokers) |
-| Redis | 6379 | Product caching |
-| Prometheus | 9090 | Metrics collection |
-| Grafana | 3000 | Dashboards (metrics + logs) |
-| Loki | 3100 | Log aggregation |
-
----
-
 ## Technology Stack
 
+**Services & Ports**
+- User (8080), Product (8081), Cart (8082), Order (8083), Inventory (8084), Auth (8086)
+- Discovery/Eureka (8761), API Gateway (8765)
+
 **Backend**
-- Java 21 (Records, Pattern Matching, Virtual Threads)
+- Java 21 (Virtual Threads, Records, Pattern Matching)
 - Spring Boot 3.5
 - Spring Cloud (Gateway, Eureka, OpenFeign)
 - Maven multi-module
 
 **Data & Messaging**
-- PostgreSQL 15 (5 databases with Flyway migrations)
-- Apache Kafka 3.6 (event streaming, 3 brokers)
+- PostgreSQL 15 (6 databases with Flyway migrations)
+- Apache Kafka 3.6 (event streaming, 3 brokers, DLQ support)
 - Redis 7.2 (caching with 1hr TTL, LRU eviction)
 
 **Resilience & Security**
-- Resilience4j (circuit breakers, rate limiting, retries)
+- Resilience4j (circuit breakers, rate limiting)
 - Spring Security + JWT authentication
-- Role-based access control (ADMIN, USER)
 
 **Observability**
-- OpenTelemetry (distributed tracing)
-- Prometheus (metrics collection)
-- Grafana (dashboards)
+- Prometheus + Grafana (metrics & dashboards)
 - Loki + Promtail (centralized logging)
-- Spring Boot Actuator (health checks)
+- OpenTelemetry + Micrometer Tracing (Order & Inventory services)
 
-**Testing**
-- JUnit 5 + Mockito (unit tests)
-- Testcontainers (integration tests with real databases)
-- JaCoCo (code coverage 74% average)
-- 253 total tests (239 unit + 14 integration)
-
-**DevOps**
-- Docker + Docker Compose
-- Kubernetes (complete YAML manifests)
-- GitHub Actions (CI/CD)
-- Flyway database migrations
+**Testing & DevOps**
+- JUnit 5 + Mockito + Testcontainers (364 tests, 84.3% coverage)
+- Docker Compose + Kubernetes manifests
+- GitHub Actions CI/CD
 
 ---
 
@@ -355,73 +401,6 @@ POST /api/orders
 
 ---
 
-## Architecture
-
-### Microservices (5 Services)
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                    Client / API Calls                    │
-└────────────────────────┬─────────────────────────────────┘
-                         │
-         ┌───────────────┼───────────────┐
-         │               │               │
-    ┌────▼────┐    ┌────▼────┐    ┌────▼────┐
-    │ Product │    │  Cart   │    │  Order  │
-    │ Service │    │ Service │    │ Service │
-    └────┬────┘    └────┬────┘    └────┬────┘
-         │              │              │
-         │              │              ├──→ Kafka (OrderPlaced)
-         │              │              │
-    ┌────▼────┐    ┌────▼────┐    ┌────▼────────┐
-    │   DB    │    │   DB    │    │  Inventory  │
-    │ (PgSQL) │    │ (PgSQL) │    │   Service   │
-    └─────────┘    └─────────┘    └────┬────────┘
-                                        │
-                                   ┌────▼────┐
-                                   │   DB    │
-                                   │ (PgSQL) │
-                                   └─────────┘
-```
-
-### Communication Patterns
-
-| Type | Use Case | Example |
-|------|----------|---------|
-| **REST (Sync)** | Real-time queries | Order Service → Inventory Service (check stock) |
-| **Kafka (Async)** | Event-driven | Order Service → Inventory Service (reserve stock) |
-| **Circuit Breaker** | Resilience | Order → Inventory call fails → Fallback |
-
----
-
-## Testing
-
-```bash
-# Run all tests (requires Docker for integration tests)
-export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
-export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
-export TESTCONTAINERS_RYUK_DISABLED=true
-./mvnw clean test
-
-# Run unit tests only (no Docker required)
-./mvnw test -Dtest='!ProductServiceIntegrationTest'
-
-# Run tests with coverage
-./mvnw clean test jacoco:report
-
-# View coverage report
-open services/product-service/target/site/jacoco/index.html
-
-# Run integration tests for Product Service (requires Docker)
-./mvnw -pl services/product-service test -Dtest=ProductServiceIntegrationTest
-```
-
-**Coverage Achieved:** 74% average across all services  
-**Total Tests:** 253 tests (239 unit + 14 integration)
-
----
-
-
 ## Kubernetes Deployment
 
 Complete Kubernetes manifests available in `k8s/` directory:
@@ -484,27 +463,6 @@ JWT_EXPIRATION=3600000
 
 ---
 
-## Performance Features
+## License
 
-**Caching Strategy:**
-- Product catalog cached in Redis (1-hour TTL)
-- Automatic cache eviction on product updates
-- LRU eviction policy for memory management
-
-**Virtual Threads (Java 21):**
-- User Service uses Java 21 Virtual Threads for HTTP request handling
-- Tomcat is configured with `Executors.newVirtualThreadPerTaskExecutor()`
-- Enables lightweight concurrency with one virtual thread per request
-- Improves scalability for I/O-bound workloads while reducing platform thread consumption
-
-**Rate Limiting:**
-- 100 requests per 60 seconds per user/IP
-- Prevents API abuse
-- Returns HTTP 429 when exceeded
-
-**Circuit Breaker:**
-- Protects Order → Inventory communication
-- Automatic fallback responses
-- Configurable thresholds and timeouts
-
----
+This project is for educational and demonstration purposes.
